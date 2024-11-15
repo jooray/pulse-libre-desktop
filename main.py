@@ -255,10 +255,12 @@ class MainScreen(BoxLayout):
         self.timer_text = f"{mins:02d}:{secs:02d}"
         self.update_ui()
 
-
     def on_strength_change(self, instance, value):
         self.strength = int(value)
         self.slider_label.text = str(self.strength)
+        if self.is_running:
+            # Send the new strength command when the device is running
+            self.loop_thread.run_coroutine(self.send_command(f"{int(self.strength)}\n"))
 
     def update_ui(self):
         self.status_label.text = f"Battery: {self.battery_level} | Charging: {self.charging_status}"
