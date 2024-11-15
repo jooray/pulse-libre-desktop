@@ -1,6 +1,11 @@
-# Pulsetto Control Application
+# Pulse-Libre Desktop Application
 
 A Kivy application to control the [Pulsetto device](https://pulsetto.myshopify.com/products/meet-pulsetto-v3?sca_ref=6511019.cCZ7LMhOmo) via Bluetooth Low Energy (BLE). The app allows you to set the strength of the device, start a timer, and monitor battery and charging status.
+
+## Screenshot
+
+![Pulse-Libre Desktop Screenshot](images/screenshot.png)
+
 
 ## Features
 
