@@ -1,6 +1,6 @@
 # Pulse-Libre Desktop Application
 
-A Kivy application to control the [Pulsetto device](https://pulsetto.myshopify.com/products/meet-pulsetto-v3?sca_ref=6511019.cCZ7LMhOmo) via Bluetooth Low Energy (BLE). The app allows you to set the strength of the device, start a timer, and monitor battery and charging status.
+A Kivy application to control the [Pulsetto device](https://juraj.bednar.io/pulsetto) via Bluetooth Low Energy (BLE). The app allows you to set the strength of the device, start a timer, and monitor battery and charging status.
 
 This app is designed for desktop platforms (MacOS, should work on Linux and maybe Windows) and mirrors the functionality of the mobile app available [here](https://github.com/jooray/PulseLibre).
 
@@ -12,7 +12,7 @@ This app is designed for desktop platforms (MacOS, should work on Linux and mayb
 
 ## Features
 
-- Scan and connect to [Pulsetto devices](https://pulsetto.myshopify.com/products/meet-pulsetto-v3?sca_ref=6511019.cCZ7LMhOmo) automatically.
+- Scan and connect to [Pulsetto devices](https://juraj.bednar.io/pulsetto) automatically.
 - Set strength levels from 1 to 9.
 - Start and stop a timer (default 4 minutes).
 - Display battery level and charging status.
@@ -76,4 +76,4 @@ them and different program lengths. There is no difference in what the device do
 The only thing that you set on your device is the strength level (1-9) and the
 app starts a timer.
 
-Get your [Pulsetto device](https://pulsetto.myshopify.com/products/meet-pulsetto-v3?sca_ref=6511019.cCZ7LMhOmo).
+Get your [Pulsetto device](https://juraj.bednar.io/pulsetto).
