@@ -1,4 +1,11 @@
 import asyncio
+import os
+import logging
+
+# Suppress debug logging
+os.environ["KIVY_LOG_LEVEL"] = "info"
+logging.getLogger("bleak").setLevel(logging.WARNING)
+
 from bleak import BleakScanner, BleakClient
 from kivy.app import App
 from kivy.clock import Clock, mainthread
@@ -56,6 +63,8 @@ class MainScreen(BoxLayout):
         self.client = None
         self.loop_thread = AsyncioLoopThread()
         self.loop = self.loop_thread.loop
+        self.keepalive_counter = 0
+        self.status_poll_event = None
 
         # Layout setup
         # Timer layout with "-" and "+" buttons
@@ -104,8 +113,8 @@ class MainScreen(BoxLayout):
         await self.scan_for_device()
         if self.device_found:
             await self.connect_to_device()
-            await self.query_device()
-            self.device_connected = True
+            if self.device_connected:
+                await self.query_device()
         self.update_ui()
 
     def scan_button_pressed(self, instance):
@@ -115,9 +124,9 @@ class MainScreen(BoxLayout):
         await self.scan_for_device()
         if self.device_found:
             await self.connect_to_device()
-            await self.query_device()
-            self.device_connected = True
-            self.update_ui()
+            if self.device_connected:
+                await self.query_device()
+        self.update_ui()
 
     async def scan_for_device(self):
         self.device_found = False
@@ -144,20 +153,57 @@ class MainScreen(BoxLayout):
             try:
                 await self.client.connect()
                 print("Connected to device.")
+                self.device_connected = True
 
                 # Start notification handler
                 await self.client.start_notify(UART_TX_CHAR_UUID, self.notification_handler)
 
                 # Handle disconnection
                 self.client.set_disconnected_callback(self.on_disconnected)
+
+                # Start periodic status polling
+                Clock.schedule_once(lambda dt: self.start_status_polling(), 0)
             except Exception as e:
                 print(f"Failed to connect: {e}")
                 self.device_connected = False
 
     def on_disconnected(self, client):
         print("Device disconnected.")
+        was_running = self.is_running
         self.device_connected = False
+        self.stop_status_polling()
         self.schedule_ui_update()
+
+        # Attempt to reconnect
+        self.loop_thread.run_coroutine(self.attempt_reconnect(was_running))
+
+    async def attempt_reconnect(self, was_running):
+        print("Attempting to reconnect...")
+        await asyncio.sleep(2)  # Wait before retry
+        await self.scan_for_device()
+        if self.device_found:
+            await self.connect_to_device()
+            if self.device_connected:
+                await self.query_device()
+                # Resume session if it was running
+                if was_running and self.is_running and self.remaining_time > 0:
+                    print("Resuming session after reconnection...")
+                    await self.start_device()
+        self.schedule_ui_update()
+
+    def start_status_polling(self):
+        if self.status_poll_event:
+            self.status_poll_event.cancel()
+        self.status_poll_event = Clock.schedule_interval(self.poll_status, 30)
+
+    def poll_status(self, dt):
+        if self.device_connected:
+            self.loop_thread.run_coroutine(self.query_device())
+
+    def stop_status_polling(self):
+        if self.status_poll_event:
+            self.status_poll_event.cancel()
+            self.status_poll_event = None
 
     async def query_device(self):
         await self.send_command("Q\n")  # Get battery level
@@ -230,6 +276,7 @@ class MainScreen(BoxLayout):
 
     def start_timer(self):
         self.remaining_time = self.timer_minutes * 60  # Convert minutes to seconds
+        self.keepalive_counter = 0
         self.update_timer_label()
         self.timer_event = Clock.schedule_interval(self.update_timer, 1)
 
@@ -244,6 +291,11 @@ class MainScreen(BoxLayout):
         if self.remaining_time > 0:
             self.remaining_time -= 1
             self.update_timer_label()
+
+            # Send keep-alive every 10 seconds
+            self.keepalive_counter += 1
+            if self.keepalive_counter % 10 == 0:
+                self.loop_thread.run_coroutine(self.send_command(f"{int(self.strength)}\n"))
         else:
             self.is_running = False
             self.start_stop_button.text = "Start"
