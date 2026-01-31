@@ -2,12 +2,24 @@
 
 A Kivy application to control the [Pulsetto device](https://juraj.bednar.io/pulsetto) via Bluetooth Low Energy (BLE). The app allows you to set the strength of the device, start a timer, and monitor battery and charging status.
 
-This app is designed for desktop platforms (MacOS, should work on Linux and maybe Windows) and mirrors the functionality of the mobile app available [here](https://github.com/jooray/PulseLibre).
+This app is designed for desktop platforms (macOS, should work on Linux and maybe Windows) and mirrors the functionality of the mobile app available [here](https://github.com/jooray/PulseLibre).
 
 
 ## Screenshot
 
 ![Pulse-Libre Desktop Screenshot](images/screenshot.png)
+
+### UI Design
+
+The application features a modern, dark-themed interface inspired by contemporary mobile health and wellness apps:
+
+- **Card-based layout** with rounded corners and subtle shadows
+- **Status bar** showing Connection, Battery, and Charging status at a glance
+- **Session Timer** with large, easy-to-read display and progress indicator
+- **Intensity Control** with slider and +/- buttons for precise adjustment
+- **Large action buttons** with clear visual states (Start/Stop/Scan)
+- **Responsive animations** for button presses and state changes
+- **Clean typography** using system fonts for optimal readability
 
 
 ## Features
