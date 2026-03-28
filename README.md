@@ -30,6 +30,18 @@ The application features a modern, dark-themed interface inspired by contemporar
 - Display battery level and charging status.
 - Compatible with desktop platforms (Windows, macOS, Linux).
 
+## Protocol
+
+We reverse engineered the protocol of both Pulsetto Lite and Fit devices. There
+is no difference between the different session types in the wave they produce,
+the only difference is recommended length and the small fact that the Sleep
+program starts with the LED dimmed. There are no session type settings in the
+app precisely for this reason - just set the time and intensity and you are
+good to go.
+
+For those interested, the full protocol documentation is
+[here](docs/PULSETTO_PROTOCOL.md).
+
 ## Prerequisites
 
 - Python 3.7 or higher
@@ -86,6 +98,6 @@ they are actually all the same, just with different recommendations on how often
 them and different program lengths. There is no difference in what the device does.
 
 The only thing that you set on your device is the strength level (1-9) and the
-app starts a timer.
+app starts a timer. (and LED intensity)
 
 Get your [Pulsetto device](https://juraj.bednar.io/pulsetto).
