@@ -9,7 +9,13 @@ logging.getLogger("bleak").setLevel(logging.WARNING)
 from bleak import BleakScanner, BleakClient
 from kivy.app import App
 from kivy.clock import Clock, mainthread
-from kivy.properties import StringProperty, NumericProperty, BooleanProperty, ListProperty, ColorProperty
+from kivy.properties import (
+    StringProperty,
+    NumericProperty,
+    BooleanProperty,
+    ListProperty,
+    ColorProperty,
+)
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.slider import Slider
@@ -28,15 +34,15 @@ import threading
 def get_font():
     """Get an available font with fallbacks. Roboto is bundled with Kivy."""
     # Try system fonts first, fall back to Kivy's bundled Roboto
-    system_fonts = ['Helvetica', 'Arial', 'DejaVuSans']
+    system_fonts = ["Helvetica", "Arial", "DejaVuSans"]
     for font in system_fonts:
         try:
-            LabelBase.register(f'_test_{font}', f'{font}.ttf')
+            LabelBase.register(f"_test_{font}", f"{font}.ttf")
             return font
         except Exception:
             pass
     # Roboto is always available as it's bundled with Kivy
-    return 'Roboto'
+    return "Roboto"
 
 
 FONT_NAME = get_font()
@@ -47,69 +53,73 @@ UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 UART_RX_CHAR_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"  # Write
 UART_TX_CHAR_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"  # Notify
 
-# Battery voltage constants
-BATTERY_FULL_VOLTAGE = 3.95  # Voltage at 100%
-BATTERY_EMPTY_VOLTAGE = 2.5  # Voltage at 0%
+# Battery voltage constants (from official APK: 3.5V=0%, 3.9V=100%)
+BATTERY_FULL_VOLTAGE = 3.9
+BATTERY_EMPTY_VOLTAGE = 3.5
 
 # Modern color scheme - Dark theme (professional medical/wellness aesthetic)
 COLORS = {
-    'bg_dark': '#0F1419',
-    'bg_card': '#1A1F2E',
-    'bg_card_light': '#252B3D',
-    'text_primary': '#FFFFFF',
-    'text_secondary': '#9CA3AF',
-    'text_muted': '#6B7280',
-    'accent_blue': '#3B82F6',
-    'accent_blue_light': '#60A5FA',
-    'accent_green': '#10B981',
-    'accent_red': '#EF4444',
-    'accent_orange': '#F59E0B',
-    'divider': '#374151',
-    'button_bg': '#374151',
-    'progress_bg': '#374151',
+    "bg_dark": "#0F1419",
+    "bg_card": "#1A1F2E",
+    "bg_card_light": "#252B3D",
+    "text_primary": "#FFFFFF",
+    "text_secondary": "#9CA3AF",
+    "text_muted": "#6B7280",
+    "accent_blue": "#3B82F6",
+    "accent_blue_light": "#60A5FA",
+    "accent_green": "#10B981",
+    "accent_red": "#EF4444",
+    "accent_orange": "#F59E0B",
+    "divider": "#374151",
+    "button_bg": "#374151",
+    "progress_bg": "#374151",
 }
+
 
 class Card(FloatLayout):
     """A rounded card widget with shadow effect"""
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.padding = dp(24)
         with self.canvas.before:
-            Color(rgba=get_color_from_hex(COLORS['bg_card']))
+            Color(rgba=get_color_from_hex(COLORS["bg_card"]))
             self.rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[dp(16)])
         self.bind(pos=self._update_rect, size=self._update_rect)
-    
+
     def _update_rect(self, *args):
         self.rect.pos = self.pos
         self.rect.size = self.size
 
+
 class StatusIndicator(BoxLayout):
     """Connection status indicator with dot and label"""
+
     connected = BooleanProperty(False)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.orientation = 'horizontal'
+        self.orientation = "horizontal"
         self.spacing = dp(6)
         self.size_hint = (1, None)
         self.height = dp(24)
 
         # Container to center content
         with self.canvas:
-            self.dot_color = Color(rgba=get_color_from_hex(COLORS['accent_red']))
+            self.dot_color = Color(rgba=get_color_from_hex(COLORS["accent_red"]))
             self.dot = Ellipse(size=(dp(8), dp(8)))
 
         self.label = Label(
-            text='Disconnected',
+            text="Disconnected",
             font_size=sp(14),
-            color=get_color_from_hex(COLORS['text_primary']),
+            color=get_color_from_hex(COLORS["text_primary"]),
             font_name=FONT_NAME,
             bold=True,
             size_hint=(1, 1),
-            halign='center',
-            valign='middle'
+            halign="center",
+            valign="middle",
         )
-        self.label.bind(size=self.label.setter('text_size'))
+        self.label.bind(size=self.label.setter("text_size"))
         self.add_widget(self.label)
         self.bind(pos=self._update_dot, size=self._update_dot)
         self.label.bind(texture_size=self._update_dot)
@@ -123,95 +133,109 @@ class StatusIndicator(BoxLayout):
 
     def on_connected(self, instance, value):
         if value:
-            self.dot_color.rgba = get_color_from_hex(COLORS['accent_green'])
-            self.label.text = 'Connected'
+            self.dot_color.rgba = get_color_from_hex(COLORS["accent_green"])
+            self.label.text = "Connected"
         else:
-            self.dot_color.rgba = get_color_from_hex(COLORS['accent_red'])
-            self.label.text = 'Disconnected'
+            self.dot_color.rgba = get_color_from_hex(COLORS["accent_red"])
+            self.label.text = "Disconnected"
         self._update_dot()
+
 
 class CircularButton(Button):
     """A circular button with modern styling"""
-    def __init__(self, text='', **kwargs):
+
+    def __init__(self, text="", **kwargs):
         super().__init__(**kwargs)
         self.text = text
         self.font_size = sp(28)
         self.bold = False
-        self.background_normal = ''
-        self.background_down = ''
+        self.background_normal = ""
+        self.background_down = ""
         self.background_color = (0, 0, 0, 0)
         self.size_hint = (None, None)
         self.size = (dp(56), dp(56))
-        self.color = get_color_from_hex(COLORS['text_primary'])
-        
+        self.color = get_color_from_hex(COLORS["text_primary"])
+
         with self.canvas.before:
-            Color(rgba=get_color_from_hex(COLORS['button_bg']))
+            Color(rgba=get_color_from_hex(COLORS["button_bg"]))
             self.circle = Ellipse(pos=self.pos, size=self.size)
         self.bind(pos=self._update_graphics, size=self._update_graphics)
-    
+
     def _update_graphics(self, *args):
         self.circle.pos = self.pos
         self.circle.size = self.size
-    
+
     def on_press(self):
         anim = Animation(opacity=0.7, duration=0.1)
         anim.start(self)
-    
+
     def on_release(self):
         anim = Animation(opacity=1, duration=0.1)
         anim.start(self)
 
+
 class CustomProgressBar(Widget):
     """Custom progress bar with rounded corners"""
+
     progress = NumericProperty(0)  # 0 to 100
-    
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.size_hint = (1, None)
         self.height = dp(4)
-        
+
         with self.canvas:
             # Background
-            Color(rgba=get_color_from_hex(COLORS['progress_bg']))
-            self.bg_rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[dp(2)])
+            Color(rgba=get_color_from_hex(COLORS["progress_bg"]))
+            self.bg_rect = RoundedRectangle(
+                pos=self.pos, size=self.size, radius=[dp(2)]
+            )
             # Progress fill
-            Color(rgba=get_color_from_hex(COLORS['accent_blue_light']))
-            self.fill_rect = RoundedRectangle(pos=self.pos, size=(0, self.height), radius=[dp(2)])
-        
-        self.bind(pos=self._update_graphics, size=self._update_graphics, progress=self._update_progress)
-    
+            Color(rgba=get_color_from_hex(COLORS["accent_blue_light"]))
+            self.fill_rect = RoundedRectangle(
+                pos=self.pos, size=(0, self.height), radius=[dp(2)]
+            )
+
+        self.bind(
+            pos=self._update_graphics,
+            size=self._update_graphics,
+            progress=self._update_progress,
+        )
+
     def _update_graphics(self, *args):
         self.bg_rect.pos = self.pos
         self.bg_rect.size = self.size
         self._update_progress()
-    
+
     def _update_progress(self, *args):
         width = self.width * (self.progress / 100)
         self.fill_rect.pos = self.pos
         self.fill_rect.size = (width, self.height)
 
+
 class ModernSlider(BoxLayout):
     """A modern styled slider with labels"""
+
     value = NumericProperty(5)
     min = NumericProperty(1)
     max = NumericProperty(9)
-    
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.orientation = 'horizontal'
+        self.orientation = "horizontal"
         self.spacing = dp(12)
         self.size_hint = (1, None)
         self.height = dp(40)
-        
+
         self.min_label = Label(
             text=str(int(self.min)),
             font_size=sp(14),
-            color=get_color_from_hex(COLORS['text_muted']),
+            color=get_color_from_hex(COLORS["text_muted"]),
             size_hint=(None, 1),
-            width=dp(24)
+            width=dp(24),
         )
         self.add_widget(self.min_label)
-        
+
         self.slider = Slider(
             min=self.min,
             max=self.max,
@@ -219,129 +243,154 @@ class ModernSlider(BoxLayout):
             step=1,
             size_hint=(1, 1),
             cursor_size=(dp(20), dp(20)),
-            cursor_image='',
-            cursor_disabled_image='',
+            cursor_image="",
+            cursor_disabled_image="",
             background_width=dp(4),
         )
         self.slider.bind(value=self._on_value_change)
         self.add_widget(self.slider)
-        
+
         self.max_label = Label(
             text=str(int(self.max)),
             font_size=sp(14),
-            color=get_color_from_hex(COLORS['text_muted']),
+            color=get_color_from_hex(COLORS["text_muted"]),
             size_hint=(None, 1),
-            width=dp(24)
+            width=dp(24),
         )
         self.add_widget(self.max_label)
-        
+
         # Style the slider
         with self.slider.canvas.before:
-            Color(rgba=get_color_from_hex(COLORS['progress_bg']))
-            self.slider.bg_rect = RoundedRectangle(pos=self.slider.pos, size=self.slider.size, radius=[dp(2)])
-        
+            Color(rgba=get_color_from_hex(COLORS["progress_bg"]))
+            self.slider.bg_rect = RoundedRectangle(
+                pos=self.slider.pos, size=self.slider.size, radius=[dp(2)]
+            )
+
         with self.slider.canvas:
-            Color(rgba=get_color_from_hex(COLORS['accent_blue']))
-            self.slider.fill_rect = RoundedRectangle(pos=self.slider.pos, size=(0, dp(4)), radius=[dp(2)])
-        
-        self.slider.bind(pos=self._update_slider_graphics, size=self._update_slider_graphics, value=self._update_slider_graphics)
-    
+            Color(rgba=get_color_from_hex(COLORS["accent_blue"]))
+            self.slider.fill_rect = RoundedRectangle(
+                pos=self.slider.pos, size=(0, dp(4)), radius=[dp(2)]
+            )
+
+        self.slider.bind(
+            pos=self._update_slider_graphics,
+            size=self._update_slider_graphics,
+            value=self._update_slider_graphics,
+        )
+
     def _on_value_change(self, instance, value):
         self.value = int(value)
-    
+
     def _update_slider_graphics(self, *args):
-        if hasattr(self.slider, 'bg_rect'):
+        if hasattr(self.slider, "bg_rect"):
             padding = dp(16)
-            self.slider.bg_rect.pos = (self.slider.x + padding, self.slider.center_y - dp(2))
+            self.slider.bg_rect.pos = (
+                self.slider.x + padding,
+                self.slider.center_y - dp(2),
+            )
             self.slider.bg_rect.size = (self.slider.width - padding * 2, dp(4))
-        
-        if hasattr(self.slider, 'fill_rect'):
+
+        if hasattr(self.slider, "fill_rect"):
             padding = dp(16)
-            ratio = (self.slider.value - self.slider.min) / (self.slider.max - self.slider.min)
+            ratio = (self.slider.value - self.slider.min) / (
+                self.slider.max - self.slider.min
+            )
             fill_width = (self.slider.width - padding * 2) * ratio
-            self.slider.fill_rect.pos = (self.slider.x + padding, self.slider.center_y - dp(2))
+            self.slider.fill_rect.pos = (
+                self.slider.x + padding,
+                self.slider.center_y - dp(2),
+            )
             self.slider.fill_rect.size = (fill_width, dp(4))
+
 
 class MainButton(Button):
     """Large main action button with rounded corners"""
-    button_type = StringProperty('start')  # start, stop, scan
-    
+
+    button_type = StringProperty("start")  # start, stop, scan
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.font_size = sp(20)
         self.bold = True
-        self.background_normal = ''
-        self.background_down = ''
+        self.background_normal = ""
+        self.background_down = ""
         self.background_color = (0, 0, 0, 0)
         self.size_hint = (1, None)
         self.height = dp(64)
-        self.color = get_color_from_hex(COLORS['text_primary'])
-        
+        self.color = get_color_from_hex(COLORS["text_primary"])
+
         with self.canvas.before:
-            self.bg_color = Color(rgba=get_color_from_hex(COLORS['accent_green']))
+            self.bg_color = Color(rgba=get_color_from_hex(COLORS["accent_green"]))
             self.rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[dp(32)])
 
         self.bind(pos=self._update_graphics, size=self._update_graphics)
         self.on_button_type(self, self.button_type)
-    
+
     def _update_graphics(self, *args):
         self.rect.pos = self.pos
         self.rect.size = self.size
-    
+
     def on_button_type(self, instance, value):
-        if not hasattr(self, 'bg_color'):
+        if not hasattr(self, "bg_color"):
             return
-        if value == 'start':
-            self.bg_color.rgba = get_color_from_hex(COLORS['accent_green'])
-            self.text = 'Start'
-        elif value == 'stop':
-            self.bg_color.rgba = get_color_from_hex(COLORS['accent_red'])
-            self.text = 'Stop'
-        elif value == 'scan':
-            self.bg_color.rgba = get_color_from_hex(COLORS['accent_blue'])
-            self.text = 'Scan for Device'
-        elif value == 'scanning':
-            self.bg_color.rgba = get_color_from_hex(COLORS['accent_blue'])
-            self.text = 'Scanning...'
-    
+        if value == "start":
+            self.bg_color.rgba = get_color_from_hex(COLORS["accent_green"])
+            self.text = "Start"
+        elif value == "stop":
+            self.bg_color.rgba = get_color_from_hex(COLORS["accent_red"])
+            self.text = "Stop"
+        elif value == "scan":
+            self.bg_color.rgba = get_color_from_hex(COLORS["accent_blue"])
+            self.text = "Scan for Device"
+        elif value == "scanning":
+            self.bg_color.rgba = get_color_from_hex(COLORS["accent_blue"])
+            self.text = "Scanning..."
+
     def on_press(self):
         anim = Animation(opacity=0.8, duration=0.1)
         anim.start(self)
-    
+
     def on_release(self):
         anim = Animation(opacity=1, duration=0.1)
         anim.start(self)
 
+
 class StrengthBadge(BoxLayout):
     """Badge displaying strength value"""
+
     value = NumericProperty(5)
-    
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.size_hint = (None, None)
         self.size = (dp(80), dp(56))
         self.padding = [dp(24), dp(12)]
-        
+
         with self.canvas.before:
-            Color(rgba=get_color_from_hex(COLORS['accent_blue']))
+            Color(rgba=get_color_from_hex(COLORS["accent_blue"]))
             self.rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[dp(24)])
-        
+
         self.label = Label(
             text=str(self.value),
             font_size=sp(32),
-            color=get_color_from_hex(COLORS['text_primary']),
+            color=get_color_from_hex(COLORS["text_primary"]),
             bold=True,
-            font_name=FONT_NAME
+            font_name=FONT_NAME,
         )
         self.add_widget(self.label)
-        self.bind(pos=self._update_graphics, size=self._update_graphics, value=self._update_value)
-    
+        self.bind(
+            pos=self._update_graphics,
+            size=self._update_graphics,
+            value=self._update_value,
+        )
+
     def _update_graphics(self, *args):
         self.rect.pos = self.pos
         self.rect.size = self.size
-    
+
     def _update_value(self, *args):
         self.label.text = str(self.value)
+
 
 class MainScreen(BoxLayout):
     timer_text = StringProperty("10:00")
@@ -357,7 +406,7 @@ class MainScreen(BoxLayout):
         super(MainScreen, self).__init__(orientation="vertical", **kwargs)
         self.padding = dp(16)
         self.spacing = dp(16)
-        
+
         self.remaining_time = self.timer_minutes * 60  # Convert minutes to seconds
         self.timer_event = None
         self.client = None
@@ -365,6 +414,10 @@ class MainScreen(BoxLayout):
         self.loop = self.loop_thread.loop
         self.keepalive_counter = 0
         self.status_poll_event = None
+        self.firmware_version = None
+        self.device_identity = None
+        self.stim_side = "D"  # D=both, A=left, C=right
+        self.led_intensity = "E"  # E=low (always), F=mid, G=high
 
         # Build UI
         self._build_status_bar()
@@ -378,82 +431,84 @@ class MainScreen(BoxLayout):
     def _build_status_bar(self):
         """Build the status bar at the top"""
         status_bar = BoxLayout(
-            orientation='horizontal',
+            orientation="horizontal",
             size_hint=(1, None),
             height=dp(80),
             padding=[dp(20), dp(16)],
-            spacing=dp(8)
+            spacing=dp(8),
         )
-        
+
         with status_bar.canvas.before:
-            Color(rgba=get_color_from_hex(COLORS['bg_card']))
-            self.status_rect = RoundedRectangle(pos=status_bar.pos, size=status_bar.size, radius=[dp(12)])
+            Color(rgba=get_color_from_hex(COLORS["bg_card"]))
+            self.status_rect = RoundedRectangle(
+                pos=status_bar.pos, size=status_bar.size, radius=[dp(12)]
+            )
         status_bar.bind(pos=self._update_status_rect, size=self._update_status_rect)
-        
+
         # Connection status
-        conn_box = self._create_status_item('Connection')
+        conn_box = self._create_status_item("Connection")
         self.status_indicator = StatusIndicator()
         conn_box.add_widget(self.status_indicator)
         status_bar.add_widget(conn_box)
-        
+
         # Divider
         status_bar.add_widget(self._create_divider())
-        
+
         # Battery
-        battery_box = self._create_status_item('Battery')
+        battery_box = self._create_status_item("Battery")
         self.battery_label = Label(
-            text='--',
+            text="--",
             font_size=sp(14),
-            color=get_color_from_hex(COLORS['text_primary']),
+            color=get_color_from_hex(COLORS["text_primary"]),
             bold=True,
             size_hint=(1, None),
-            height=dp(20)
+            height=dp(20),
         )
         battery_box.add_widget(self.battery_label)
         status_bar.add_widget(battery_box)
-        
+
         # Divider
         status_bar.add_widget(self._create_divider())
-        
+
         # Charging
-        charging_box = self._create_status_item('Charging')
+        charging_box = self._create_status_item("Charging")
         self.charging_label = Label(
-            text='--',
+            text="--",
             font_size=sp(14),
-            color=get_color_from_hex(COLORS['text_primary']),
+            color=get_color_from_hex(COLORS["text_primary"]),
             bold=True,
             size_hint=(1, None),
-            height=dp(20)
+            height=dp(20),
         )
         charging_box.add_widget(self.charging_label)
         status_bar.add_widget(charging_box)
-        
+
         self.add_widget(status_bar)
-    
+
     def _create_status_item(self, label_text):
-        box = BoxLayout(orientation='vertical', size_hint=(1, 1))
+        box = BoxLayout(orientation="vertical", size_hint=(1, 1))
         label = Label(
             text=label_text,
             font_size=sp(12),
-            color=get_color_from_hex(COLORS['text_secondary']),
+            color=get_color_from_hex(COLORS["text_secondary"]),
             size_hint=(1, None),
-            height=dp(18)
+            height=dp(18),
         )
         box.add_widget(label)
         return box
-    
+
     def _create_divider(self):
         divider = Widget(size_hint=(None, 1), width=dp(1))
         with divider.canvas:
-            Color(rgba=get_color_from_hex(COLORS['divider']))
+            Color(rgba=get_color_from_hex(COLORS["divider"]))
             self.divider_rect = RoundedRectangle(pos=divider.pos, size=divider.size)
         divider.bind(pos=self._update_divider, size=self._update_divider)
         return divider
-    
+
     def _update_status_rect(self, instance, value):
         self.status_rect.pos = instance.pos
         self.status_rect.size = instance.size
-    
+
     def _update_divider(self, instance, value):
         self.divider_rect.pos = instance.pos
         self.divider_rect.size = instance.size
@@ -461,65 +516,67 @@ class MainScreen(BoxLayout):
     def _build_timer_card(self):
         """Build the timer card"""
         timer_card = BoxLayout(
-            orientation='vertical',
+            orientation="vertical",
             size_hint=(1, None),
             height=dp(160),
             padding=dp(24),
-            spacing=dp(16)
+            spacing=dp(16),
         )
-        
+
         with timer_card.canvas.before:
-            Color(rgba=get_color_from_hex(COLORS['bg_card']))
-            self.timer_rect = RoundedRectangle(pos=timer_card.pos, size=timer_card.size, radius=[dp(16)])
+            Color(rgba=get_color_from_hex(COLORS["bg_card"]))
+            self.timer_rect = RoundedRectangle(
+                pos=timer_card.pos, size=timer_card.size, radius=[dp(16)]
+            )
         timer_card.bind(pos=self._update_timer_rect, size=self._update_timer_rect)
-        
+
         # Label
         timer_label = Label(
-            text='Session Timer',
+            text="Session Timer",
             font_size=sp(16),
-            color=get_color_from_hex(COLORS['text_secondary']),
+            color=get_color_from_hex(COLORS["text_secondary"]),
             bold=True,
             size_hint=(1, None),
-            height=dp(24)
+            height=dp(24),
         )
         timer_card.add_widget(timer_label)
-        
+
         # Timer display row
-        timer_row = BoxLayout(orientation='horizontal', spacing=dp(24))
-        
+        timer_row = BoxLayout(orientation="horizontal", spacing=dp(24))
+
         # Decrease button
-        self.decrease_button = CircularButton(text='-')
+        self.decrease_button = CircularButton(text="-")
         self.decrease_button.bind(on_press=self.decrease_timer)
         timer_row.add_widget(self.decrease_button)
-        
+
         # Timer value
-        timer_value_box = BoxLayout(orientation='vertical', size_hint=(1, 1))
+        timer_value_box = BoxLayout(orientation="vertical", size_hint=(1, 1))
         self.timer_display = Label(
             text=self.timer_text,
             font_size=sp(56),
-            color=get_color_from_hex(COLORS['text_primary']),
+            color=get_color_from_hex(COLORS["text_primary"]),
             bold=True,
             font_name=FONT_NAME,
             size_hint=(1, None),
-            height=dp(70)
+            height=dp(70),
         )
         timer_value_box.add_widget(self.timer_display)
-        
+
         # Progress bar
         self.timer_progress = CustomProgressBar(size_hint=(1, None), height=dp(4))
         self.timer_progress.progress = 0
         timer_value_box.add_widget(self.timer_progress)
-        
+
         timer_row.add_widget(timer_value_box)
-        
+
         # Increase button
-        self.increase_button = CircularButton(text='+')
+        self.increase_button = CircularButton(text="+")
         self.increase_button.bind(on_press=self.increase_timer)
         timer_row.add_widget(self.increase_button)
-        
+
         timer_card.add_widget(timer_row)
         self.add_widget(timer_card)
-    
+
     def _update_timer_rect(self, instance, value):
         self.timer_rect.pos = instance.pos
         self.timer_rect.size = instance.size
@@ -527,64 +584,70 @@ class MainScreen(BoxLayout):
     def _build_strength_card(self):
         """Build the strength control card"""
         strength_card = BoxLayout(
-            orientation='vertical',
+            orientation="vertical",
             size_hint=(1, None),
             height=dp(180),
             padding=dp(24),
-            spacing=dp(16)
+            spacing=dp(16),
         )
-        
+
         with strength_card.canvas.before:
-            Color(rgba=get_color_from_hex(COLORS['bg_card']))
-            self.strength_rect = RoundedRectangle(pos=strength_card.pos, size=strength_card.size, radius=[dp(16)])
-        strength_card.bind(pos=self._update_strength_rect, size=self._update_strength_rect)
-        
+            Color(rgba=get_color_from_hex(COLORS["bg_card"]))
+            self.strength_rect = RoundedRectangle(
+                pos=strength_card.pos, size=strength_card.size, radius=[dp(16)]
+            )
+        strength_card.bind(
+            pos=self._update_strength_rect, size=self._update_strength_rect
+        )
+
         # Label
         strength_label = Label(
-            text='Intensity Level',
+            text="Intensity Level",
             font_size=sp(16),
-            color=get_color_from_hex(COLORS['text_secondary']),
+            color=get_color_from_hex(COLORS["text_secondary"]),
             bold=True,
             size_hint=(1, None),
-            height=dp(24)
+            height=dp(24),
         )
         strength_card.add_widget(strength_label)
-        
+
         # Strength display row
-        strength_row = BoxLayout(orientation='horizontal', spacing=dp(24))
+        strength_row = BoxLayout(orientation="horizontal", spacing=dp(24))
 
         # Decrease button
-        self.strength_minus = CircularButton(text='-')
+        self.strength_minus = CircularButton(text="-")
         self.strength_minus.bind(on_press=lambda x: self.change_strength(-1))
         strength_row.add_widget(self.strength_minus)
 
         # Center container to hold badge (AnchorLayout centers content)
-        center_box = AnchorLayout(size_hint=(1, 1), anchor_x='center', anchor_y='center')
+        center_box = AnchorLayout(
+            size_hint=(1, 1), anchor_x="center", anchor_y="center"
+        )
         self.strength_badge = StrengthBadge(value=self.strength)
         center_box.add_widget(self.strength_badge)
         strength_row.add_widget(center_box)
 
         # Increase button
-        self.strength_plus = CircularButton(text='+')
+        self.strength_plus = CircularButton(text="+")
         self.strength_plus.bind(on_press=lambda x: self.change_strength(1))
         strength_row.add_widget(self.strength_plus)
 
         strength_card.add_widget(strength_row)
-        
+
         # Slider
         self.strength_slider = ModernSlider(value=self.strength)
         self.strength_slider.slider.bind(value=self.on_strength_change)
         strength_card.add_widget(self.strength_slider)
-        
+
         self.add_widget(strength_card)
-    
+
     def _update_strength_rect(self, instance, value):
         self.strength_rect.pos = instance.pos
         self.strength_rect.size = instance.size
 
     def _build_control_button(self):
         """Build the main control button"""
-        self.main_button = MainButton(button_type='scan')
+        self.main_button = MainButton(button_type="scan")
         self.main_button.bind(on_press=self.main_button_pressed)
         self.add_widget(Widget(size_hint=(1, 1)))  # Spacer
         self.add_widget(self.main_button)
@@ -612,30 +675,34 @@ class MainScreen(BoxLayout):
         self.is_running = True
         self.start_timer()
         self.loop_thread.run_coroutine(self.start_device())
+        # Switch to fast polling during session (3s like official app)
+        self.start_status_polling(interval=3)
         self._update_button_state()
 
     def stop_session(self):
         self.is_running = False
         self.stop_timer()
         self.loop_thread.run_coroutine(self.stop_device())
+        # Switch back to slow polling when idle (30s)
+        self.start_status_polling(interval=30)
         self._update_button_state()
 
     def _update_button_state(self):
         """Update button appearance based on state"""
         if not self.device_connected:
-            self.main_button.button_type = 'scan'
+            self.main_button.button_type = "scan"
             self.decrease_button.disabled = False
             self.decrease_button.opacity = 1
             self.increase_button.disabled = False
             self.increase_button.opacity = 1
         elif self.is_running:
-            self.main_button.button_type = 'stop'
+            self.main_button.button_type = "stop"
             self.decrease_button.disabled = True
             self.decrease_button.opacity = 0.3
             self.increase_button.disabled = True
             self.increase_button.opacity = 0.3
         else:
-            self.main_button.button_type = 'start'
+            self.main_button.button_type = "start"
             self.decrease_button.disabled = False
             self.decrease_button.opacity = 1
             self.increase_button.disabled = False
@@ -684,10 +751,17 @@ class MainScreen(BoxLayout):
                 self.device_connected = True
 
                 # Start notification handler
-                await self.client.start_notify(UART_TX_CHAR_UUID, self.notification_handler)
+                await self.client.start_notify(
+                    UART_TX_CHAR_UUID, self.notification_handler
+                )
 
                 # Handle disconnection
                 self.client.set_disconnected_callback(self.on_disconnected)
+
+                # Query device info (firmware + identity) first
+                await self.query_device_info()
+                # Small delay to let responses arrive and device type to be detected
+                await asyncio.sleep(0.5)
 
                 # Start periodic status polling
                 Clock.schedule_once(lambda dt: self.start_status_polling(), 0)
@@ -719,10 +793,11 @@ class MainScreen(BoxLayout):
                     await self.start_device()
         self.schedule_ui_update()
 
-    def start_status_polling(self):
+    def start_status_polling(self, interval=30):
+        """Start periodic status polling. Uses 3s during sessions, 30s when idle."""
         if self.status_poll_event:
             self.status_poll_event.cancel()
-        self.status_poll_event = Clock.schedule_interval(self.poll_status, 30)
+        self.status_poll_event = Clock.schedule_interval(self.poll_status, interval)
 
     def poll_status(self, dt):
         if self.device_connected:
@@ -734,8 +809,13 @@ class MainScreen(BoxLayout):
             self.status_poll_event = None
 
     async def query_device(self):
-        await self.send_command("Q\n")  # Get battery level
         await self.send_command("u\n")  # Get charging status
+        await self.send_command("Q\n")  # Get battery level
+
+    async def query_device_info(self):
+        """Query firmware version and device identity (called once on connect)."""
+        await self.send_command("v\n")  # Firmware version
+        await self.send_command("i\n")  # Device identity
 
     @mainthread
     def schedule_ui_update(self):
@@ -743,11 +823,11 @@ class MainScreen(BoxLayout):
 
     @mainthread
     def set_button_scanning(self):
-        self.main_button.button_type = 'scanning'
+        self.main_button.button_type = "scanning"
 
     def notification_handler(self, sender, data):
-        message = data.decode('utf-8').strip()
-        print(f"Received: {message}")
+        message = data.decode("utf-8", errors="replace").strip()
+        print(f"Received: {repr(message)}")
 
         if "Batt:" in message:
             try:
@@ -756,10 +836,25 @@ class MainScreen(BoxLayout):
                 self.battery_level = f"{battery_percentage}%"
             except (IndexError, ValueError):
                 pass
-        elif message.startswith("Charging"):
-            self.charging_status = "Charging"
-        elif message.startswith("Not Charging"):
-            self.charging_status = "Not Charging"
+        elif message.startswith("Charging") or message.startswith("Not Charging"):
+            # Text format (some firmware versions)
+            if message.startswith("Not"):
+                self.charging_status = "Not Charging"
+            else:
+                self.charging_status = "Charging"
+        elif "u\x01" in message or message.startswith("u"):
+            # Binary charging format: u<SOH>1 = charging, u<SOH>0 = not charging
+            if "1" in message:
+                self.charging_status = "Charging"
+            else:
+                self.charging_status = "Not Charging"
+        elif message.startswith("fw:"):
+            self.firmware_version = message[3:]
+            print(f"Firmware: {self.firmware_version}")
+        elif message.startswith("Pulsetto_") or message.startswith("pulsetto_"):
+            # Device identity response (same protocol for all models)
+            self.device_identity = message
+            print(f"Device identity: {message}")
 
         self.schedule_ui_update()
 
@@ -769,24 +864,59 @@ class MainScreen(BoxLayout):
         elif voltage <= BATTERY_EMPTY_VOLTAGE:
             return 0
         else:
-            percentage = ((voltage - BATTERY_EMPTY_VOLTAGE) / (BATTERY_FULL_VOLTAGE - BATTERY_EMPTY_VOLTAGE)) * 100
+            percentage = (
+                (voltage - BATTERY_EMPTY_VOLTAGE)
+                / (BATTERY_FULL_VOLTAGE - BATTERY_EMPTY_VOLTAGE)
+            ) * 100
             return int(round(percentage))
 
-    async def send_command(self, command):
+    async def send_command(self, command, with_response=None):
+        """Send a BLE command to the device.
+
+        Args:
+            command: ASCII command string (should end with \\n)
+            with_response: If None, auto-detect based on command type:
+                          '+' and '-' use writeWithResponse,
+                          all others use writeWithoutResponse.
+        """
         if self.client and self.client.is_connected:
             try:
-                await self.client.write_gatt_char(UART_RX_CHAR_UUID, command.encode(), response=True)
-                print(f"Sent command: {command.strip()}")
+                if with_response is None:
+                    # Auto-detect: ramp commands (+/-) use writeWithResponse
+                    cmd_char = command.strip()
+                    with_response = cmd_char in ("+", "-")
+                await self.client.write_gatt_char(
+                    UART_RX_CHAR_UUID, command.encode(), response=with_response
+                )
+                print(
+                    f"Sent command: {command.strip()} (response={'yes' if with_response else 'no'})"
+                )
             except Exception as e:
-                print(f"Failed to send command {command}: {e}")
+                print(f"Failed to send command {command.strip()}: {e}")
 
     async def start_device(self):
-        await self.send_command("D\n")
-        await self.send_command(f"{int(self.strength)}\n")
+        # Full startup ramp sequence (from APK beginSession — same for all devices)
+        await self.send_command("+\n")  # rampUp (writeWithResponse)
+        await self.send_command("-\n")  # rampDown (writeWithResponse)
+        await asyncio.sleep(0.25)
+        await self.send_command("0\n")  # level 0
+        await asyncio.sleep(0.45)
+        await self.send_command("5\n")  # brief calibration pulse
+        await asyncio.sleep(0.45)
+        await self.send_command("0\n")  # back to zero
+        await asyncio.sleep(0.45)
+        await self.send_command(f"{int(self.strength)}\n")  # target intensity
+        await asyncio.sleep(0.25)
+        # Side selection and LED intensity
+        await self.send_command(f"{self.stim_side}\n")  # D=both, A=left, C=right
+        await self.send_command(f"{self.led_intensity}\n")  # E=low, F=mid, G=high
         print("Device started.")
 
     async def stop_device(self):
-        await self.send_command("-\n")
+        # Full stop sequence (from APK endSession — same for all devices)
+        await self.send_command("+\n")  # rampUp (writeWithResponse)
+        await self.send_command("-\n")  # rampDown (writeWithResponse)
+        await self.send_command("-\n")  # endSession (writeWithResponse)
         print("Device stopped.")
         # Query device status after stopping
         await self.query_device()
@@ -818,11 +948,15 @@ class MainScreen(BoxLayout):
             # Send keep-alive every 10 seconds
             self.keepalive_counter += 1
             if self.keepalive_counter % 10 == 0:
-                self.loop_thread.run_coroutine(self.send_command(f"{int(self.strength)}\n"))
+                self.loop_thread.run_coroutine(
+                    self.send_command(f"{int(self.strength)}\n")
+                )
         else:
             self.is_running = False
             self.stop_timer()
             self.loop_thread.run_coroutine(self.stop_device())
+            # Switch back to slow polling when idle
+            self.start_status_polling(interval=30)
             self._update_button_state()
 
     def update_timer_label(self):
@@ -839,8 +973,10 @@ class MainScreen(BoxLayout):
 
     def update_ui(self):
         # Update battery display
-        self.battery_label.text = self.battery_level if self.battery_level != "--" else "--"
-        
+        self.battery_label.text = (
+            self.battery_level if self.battery_level != "--" else "--"
+        )
+
         # Update charging display
         if self.charging_status == "Charging":
             self.charging_label.text = "Yes"
@@ -848,10 +984,10 @@ class MainScreen(BoxLayout):
             self.charging_label.text = "No"
         else:
             self.charging_label.text = "--"
-        
+
         # Update connection indicator
         self.status_indicator.connected = self.device_connected
-        
+
         # Update button state
         self._update_button_state()
 
@@ -878,6 +1014,7 @@ class AsyncioLoopThread:
     """
     Manages a persistent asyncio event loop in a separate thread.
     """
+
     def __init__(self):
         self.loop = asyncio.new_event_loop()
         self.thread = threading.Thread(target=self.run_loop, daemon=True)
@@ -897,11 +1034,12 @@ class AsyncioLoopThread:
 
 class PulseLibreApp(App):
     def build(self):
-        self.title = 'Pulse Libre'
+        self.title = "Pulse Libre"
         # Set window background color
         from kivy.core.window import Window
-        Window.clearcolor = get_color_from_hex(COLORS['bg_dark'])
-        
+
+        Window.clearcolor = get_color_from_hex(COLORS["bg_dark"])
+
         self.main_screen = MainScreen()
         return self.main_screen
 
@@ -909,5 +1047,5 @@ class PulseLibreApp(App):
         self.main_screen.on_stop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     PulseLibreApp().run()
