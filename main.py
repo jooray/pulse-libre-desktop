@@ -715,7 +715,7 @@ class MainScreen(BoxLayout):
             await self.connect_to_device()
             if self.device_connected:
                 await self.query_device()
-        self.update_ui()
+        self.schedule_ui_update()
 
     async def scan_and_connect(self):
         self.set_button_scanning()
@@ -724,7 +724,7 @@ class MainScreen(BoxLayout):
             await self.connect_to_device()
             if self.device_connected:
                 await self.query_device()
-        self.update_ui()
+        self.schedule_ui_update()
 
     async def scan_for_device(self):
         self.device_found = False
