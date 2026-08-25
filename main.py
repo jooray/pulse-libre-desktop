@@ -1,6 +1,8 @@
 import asyncio
 import os
 import logging
+import traceback
+from concurrent.futures import CancelledError
 
 # Suppress debug logging
 os.environ["KIVY_LOG_LEVEL"] = "info"
@@ -1023,7 +1025,21 @@ class AsyncioLoopThread:
         self.thread.join()
 
     def run_coroutine(self, coro):
-        return asyncio.run_coroutine_threadsafe(coro, self.loop)
+        future = asyncio.run_coroutine_threadsafe(coro, self.loop)
+        future.add_done_callback(self._report_exception)
+        return future
+
+    @staticmethod
+    def _report_exception(future):
+        """Log errors from BLE tasks. Every caller fires and forgets, so without
+        this an exception is stored on the Future and never seen."""
+        try:
+            future.result()
+        except CancelledError:
+            pass  # Expected when the loop is stopped on app shutdown.
+        except Exception:
+            print("Unhandled error in BLE task:")
+            traceback.print_exc()
 
 
 class PulseLibreApp(App):
