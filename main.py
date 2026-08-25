@@ -426,7 +426,7 @@ class MainScreen(BoxLayout):
         self._build_control_button()
 
         # Start BLE operations
-        self.loop_thread.run_coroutine(self.ble_loop())
+        self.loop_thread.run_coroutine(self.scan_and_connect())
 
     def _build_status_bar(self):
         """Build the status bar at the top"""
@@ -708,15 +708,6 @@ class MainScreen(BoxLayout):
             self.increase_button.disabled = False
             self.increase_button.opacity = 1
 
-    async def ble_loop(self):
-        self.set_button_scanning()
-        await self.scan_for_device()
-        if self.device_found:
-            await self.connect_to_device()
-            if self.device_connected:
-                await self.query_device()
-        self.schedule_ui_update()
-
     async def scan_and_connect(self):
         self.set_button_scanning()
         await self.scan_for_device()
@@ -803,7 +794,10 @@ class MainScreen(BoxLayout):
         if self.device_connected:
             self.loop_thread.run_coroutine(self.query_device())
 
+    @mainthread
     def stop_status_polling(self):
+        # Called from on_disconnected(), which runs on the BLE thread, so the
+        # Clock event is cancelled on the main thread like every other UI touch.
         if self.status_poll_event:
             self.status_poll_event.cancel()
             self.status_poll_event = None
