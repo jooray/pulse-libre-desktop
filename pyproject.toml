@@ -3,6 +3,7 @@ name = "pulsetto-libre-desktop"
 version = "0.1.0"
 description = ""
 authors = ["Juraj Bednar <juraj@bednar.io>"]
+license = "MIT"
 readme = "README.md"
 package-mode = false
 
