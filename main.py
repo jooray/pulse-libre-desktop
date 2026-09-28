@@ -813,6 +813,10 @@ class MainScreen(BoxLayout):
         await self.send_command("v\n")  # Firmware version
         await self.send_command("i\n")  # Device identity
 
+    async def enter_dfu_mode(self):
+        "Reboot the connected device into its firmware-update bootloader."
+        await self.send_command("U\n")
+
     @mainthread
     def schedule_ui_update(self):
         self.update_ui()
