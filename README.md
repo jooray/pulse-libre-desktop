@@ -2,6 +2,19 @@
 
 A Kivy application to control the [Pulsetto device](https://juraj.bednar.io/pulsetto) via Bluetooth Low Energy (BLE). The app allows you to set the strength of the device, start a timer, and monitor battery and charging status.
 
+<!-- jooray-links:start -->
+### More from me
+
+**Related projects**
+
+- [PulseLibre](https://github.com/jooray/PulseLibre): mobile app for controlling Pulsetto devices
+- [roadstr](https://github.com/jooray/roadstr): road-event reporting over Nostr and MeshCore
+
+**Full project showcase:** Part of [PulseLibre](https://juraj.bednar.io/showcase/#RF-02) in my project showcase, or [all my projects](https://juraj.bednar.io/showcase/).
+
+I write about building things on [my blog](https://juraj.bednar.io/en/blog-en/). I also wrote a cypherpunk novel, [Tamers of Entropy](https://tamersofentropy.net/), and there is a [trailer](https://tamersofentropy.net/#trailer).
+<!-- jooray-links:end -->
+
 This app is designed for desktop platforms (macOS, should work on Linux and maybe Windows) and mirrors the functionality of the mobile app available [here](https://github.com/jooray/PulseLibre).
 
 
