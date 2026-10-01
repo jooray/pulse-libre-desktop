@@ -62,7 +62,7 @@ BLE command set.
 |-------|---------|
 | `+` | ramp up |
 | `-` | ramp down / stop |
-| `U` | update session |
+| `U` | reboot to DFU mode |
 | `A` | stimulate left side |
 | `C` | stimulate right side |
 | `D` | stimulate both sides |
@@ -191,6 +191,19 @@ Firmware responses begin with `fw:`:
 ```text
 fw:1.1.22
 ```
+
+## DFU Mode
+
+Firmware updates use Nordic Secure DFU Service (0xFE59) and require the charger to be connected. The device advertises as `PulsUp` when in DFU mode and verifies updates with the ECDSA algorithm using the public key:
+
+```pem
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEhAnlFZNUK5Vv6mZXZI0RObMgidQb
+JmF3eonk83H2hTyHomfVIBoR3TWUoCRJSQl1DL74BWCniFvg4mpxnmLsrA==
+-----END PUBLIC KEY-----
+```
+
+Firmware images are not distributed with this project.
 
 ## Programs
 
